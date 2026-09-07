@@ -1,6 +1,6 @@
 {
   "name": "GASTOS.CASA",
   "description": "Controle financeiro doméstico e gestão de cartões de crédito com cálculo da melhor data de compra, vencimentos e importação de notas fiscais.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

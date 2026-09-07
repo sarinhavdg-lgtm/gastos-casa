@@ -8,8 +8,10 @@ import {
   resolveNFCe,
   SAMPLE_NFCE_RECEIPTS,
 } from "../utils/nfceUtils";
+import { QRScanner } from "./QRScanner";
 import {
   QrCode,
+  Camera,
   FileText,
   Upload,
   Sparkles,
@@ -39,7 +41,7 @@ export function NFCeImportModal({
   onSaveExpenses,
   isDark = false,
 }: NFCeImportModalProps) {
-  const [activeInputTab, setActiveInputTab] = useState<"key" | "xml" | "quick">("key");
+  const [activeInputTab, setActiveInputTab] = useState<"qr" | "key" | "xml" | "quick">("qr");
   const [accessKeyInput, setAccessKeyInput] = useState("");
   const [urlInput, setUrlInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -62,6 +64,24 @@ export function NFCeImportModal({
   }, [accessKeyInput]);
 
   if (!isOpen) return null;
+
+  // Handle Scan QR Code directly from camera
+  const handleScanQRCode = async (decodedText: string) => {
+    setErrorMessage("");
+    setIsLoading(true);
+    setAccessKeyInput(decodedText);
+    try {
+      const resolved = await resolveNFCe(decodedText);
+      setReceipt(resolved);
+    } catch (err: any) {
+      setErrorMessage(
+        err.message || "Não foi possível carregar a nota fiscal pelo QR Code escaneado."
+      );
+      setActiveInputTab("key");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle Download from Access Key / URL
   const handleDownloadNFCe = async () => {
@@ -210,44 +230,87 @@ export function NFCeImportModal({
           {/* Step 1: Input method choice */}
           {!receipt ? (
             <div className="space-y-4">
-              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+              <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold gap-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveInputTab("qr")}
+                  className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeInputTab === "qr"
+                      ? "bg-emerald-600 text-white shadow-xs font-bold"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <Camera className="w-3.5 h-3.5 text-emerald-200" />
+                  Escanear QR Code
+                </button>
                 <button
                   type="button"
                   onClick={() => setActiveInputTab("key")}
-                  className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeInputTab === "key"
                       ? "bg-indigo-600 text-white shadow-xs font-bold"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  Chave de 44 Dígitos / QR Code
+                  Digitar Chave
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveInputTab("xml")}
-                  className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeInputTab === "xml"
                       ? "bg-indigo-600 text-white shadow-xs font-bold"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  Upload de Arquivo XML
+                  Arquivo XML
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveInputTab("quick")}
-                  className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  className={`py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     activeInputTab === "quick"
                       ? "bg-indigo-600 text-white shadow-xs font-bold"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  Exemplos Rápidos
+                  Exemplos
                 </button>
               </div>
+
+              {/* TAB 0: Live QR Code Scanner */}
+              {activeInputTab === "qr" && (
+                <div className="space-y-3">
+                  <QRScanner onScanSuccess={handleScanQRCode} isDark={isDark} />
+
+                  {isLoading && (
+                    <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs flex items-center justify-center gap-3 animate-pulse">
+                      <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="font-bold">Processando cupom e baixando os itens da compra...</span>
+                    </div>
+                  )}
+
+                  {errorMessage && (
+                    <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveInputTab("key")}
+                      className="text-xs text-indigo-500 hover:underline cursor-pointer"
+                    >
+                      Prefere digitar a chave de 44 dígitos manualmente? Clique aqui
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* TAB 1: Access key / URL */}
               {activeInputTab === "key" && (
