@@ -92,10 +92,11 @@ export function Navbar({
             : "bg-white/95 border-slate-200 text-slate-900"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-15 md:h-16 gap-2 sm:gap-3">
-            {/* Mobile: Hamburger Button (3 Barrinhas ☰) */}
-            <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+          {/* Main row */}
+          <div className="flex items-center justify-between h-14 md:h-16 gap-2">
+            {/* Left: Hamburger (☰) + Logo */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 id="btn-open-sidebar"
                 type="button"
@@ -112,15 +113,15 @@ export function Navbar({
               </button>
 
               {/* Logo & Branding */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-base sm:text-lg shadow-md shrink-0">
+              <div className="flex items-center gap-1.5">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm sm:text-base shadow-md shrink-0">
                   $
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <h1 className="text-base sm:text-lg font-extrabold tracking-tight truncate">
+                <div className="leading-tight">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm sm:text-base font-extrabold tracking-tight">
                       GASTOS<span className="text-indigo-500">.CASA</span>
-                    </h1>
+                    </span>
                     <span
                       className={`hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${
                         isDark
@@ -132,16 +133,13 @@ export function Navbar({
                       {isSaving ? "Salvando..." : "Nuvem"}
                     </span>
                   </div>
-                  <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block truncate sm:hidden">
-                    Gestão Doméstica
-                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Center: Month Navigator */}
+            {/* Center: Month Navigator (Desktop only in row 1, Mobile has it right below) */}
             <div
-              className={`flex items-center p-1 rounded-xl border text-xs font-semibold ${
+              className={`hidden md:flex items-center p-1 rounded-xl border text-xs font-semibold ${
                 isDark
                   ? "bg-slate-900 border-slate-800"
                   : "bg-slate-100 border-slate-200"
@@ -159,7 +157,7 @@ export function Navbar({
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              <span className="px-1.5 sm:px-3 font-bold whitespace-nowrap text-xs">
+              <span className="px-3 font-bold whitespace-nowrap text-xs">
                 {getMonthYearLabel(selectedMonth)}
               </span>
 
@@ -176,98 +174,82 @@ export function Navbar({
               </button>
             </div>
 
-            {/* Right: Quick Action Buttons */}
-            <div className="flex items-center gap-1.5">
-              {/* Scan NFC-e button on mobile header */}
+            {/* Right: Quick Action Buttons (VISÍVEIS NO CELULAR E NO COMPUTADOR) */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Scan NFC-e button */}
               <button
-                id="btn-navbar-scan-nfce-mobile"
+                id="btn-navbar-scan-nfce-top"
                 onClick={onOpenNFCe}
-                className={`p-2 rounded-xl border text-xs font-bold sm:hidden flex items-center gap-1 transition-colors cursor-pointer ${
+                className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer ${
                   isDark
-                    ? "bg-indigo-950/70 border-indigo-800 text-indigo-300"
-                    : "bg-indigo-50 border-indigo-200 text-indigo-700"
+                    ? "bg-indigo-950/70 hover:bg-indigo-900 border-indigo-800 text-indigo-300"
+                    : "bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700"
                 }`}
                 title="Ler QR Code da Nota Fiscal"
               >
                 <QrCode className="w-4 h-4 text-indigo-500" />
+                <span className="hidden sm:inline">NFC-e</span>
+              </button>
+
+              {/* Cards button */}
+              <button
+                id="btn-navbar-cards-top"
+                onClick={onOpenCards}
+                className={`p-2 sm:px-3 sm:py-2 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                  isDark
+                    ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
+                    : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+                }`}
+                title="Gerenciar Cartões de Crédito"
+              >
+                <CardIcon className="w-4 h-4 text-orange-500" />
+                <span className="hidden sm:inline">Cartões</span>
+                {cardCount > 0 && (
+                  <span className="px-1.5 py-0.2 bg-orange-500/20 text-orange-400 rounded-full text-[10px] font-bold">
+                    {cardCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Theme Toggle Button */}
+              <button
+                id="btn-toggle-theme-top"
+                onClick={onToggleTheme}
+                className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                  isDark
+                    ? "bg-slate-900 hover:bg-slate-850 border-slate-800 text-amber-400"
+                    : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+                }`}
+                title={isDark ? "Mudar para Modo Claro" : "Mudar para Modo Escuro"}
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              </button>
+
+              {/* Tutorial button (Desktop only, mobile has it in sidebar) */}
+              <button
+                id="btn-navbar-tutorial-desktop"
+                onClick={onOpenTutorial}
+                className={`hidden md:flex p-2 rounded-xl border text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer ${
+                  isDark
+                    ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
+                    : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+                }`}
+                title="Tutorial e Como Usar"
+              >
+                <HelpCircle className="w-4 h-4 text-indigo-500" />
               </button>
 
               {/* Add Expense (Quick button) */}
               <button
                 id="btn-navbar-new-expense"
                 onClick={onOpenNewExpense}
-                className="px-2.5 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-md shadow-indigo-500/20 transition-all cursor-pointer whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Adicionar Gasto</span>
-                <span className="sm:hidden">Gasto</span>
+                <span className="text-xs">Gasto</span>
               </button>
 
-              {/* Desktop Only Buttons */}
-              <div className="hidden md:flex items-center gap-2">
-                {/* Theme Toggle Button */}
-                <button
-                  id="btn-toggle-theme-desktop"
-                  onClick={onToggleTheme}
-                  className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    isDark
-                      ? "bg-slate-900 hover:bg-slate-850 border-slate-800 text-amber-400"
-                      : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
-                  }`}
-                  title={isDark ? "Mudar para Layout Claro" : "Mudar para Layout Escuro"}
-                >
-                  {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-                </button>
-
-                {/* Tutorial button */}
-                <button
-                  id="btn-navbar-tutorial-desktop"
-                  onClick={onOpenTutorial}
-                  className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    isDark
-                      ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
-                      : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
-                  }`}
-                  title="Tutorial e Como Usar"
-                >
-                  <HelpCircle className="w-4 h-4 text-indigo-500" />
-                </button>
-
-                {/* NFC-e button */}
-                <button
-                  id="btn-navbar-nfce-desktop"
-                  onClick={onOpenNFCe}
-                  className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    isDark
-                      ? "bg-indigo-950/70 hover:bg-indigo-900 border-indigo-800 text-indigo-300"
-                      : "bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-700"
-                  }`}
-                  title="Importar NFC-e / Ler QR Code"
-                >
-                  <Receipt className="w-4 h-4 text-indigo-500" />
-                  <span>Importar NFC-e</span>
-                </button>
-
-                {/* Cards button */}
-                <button
-                  id="btn-navbar-cards-desktop"
-                  onClick={onOpenCards}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition-colors cursor-pointer ${
-                    isDark
-                      ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
-                      : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
-                  }`}
-                  title="Gerenciar Cartões de Crédito"
-                >
-                  <CardIcon className="w-4 h-4 text-orange-500" />
-                  <span>Cartões</span>
-                  <span className="px-1.5 py-0.2 bg-orange-500/20 text-orange-400 rounded-full text-[10px] font-bold">
-                    {cardCount}
-                  </span>
-                </button>
-              </div>
-
-              {/* User badge */}
+              {/* User badge (Desktop) */}
               {currentUser && (
                 <div className="hidden lg:flex items-center gap-1.5 pl-1.5 border-l border-slate-200 dark:border-slate-800">
                   <div
@@ -294,6 +276,50 @@ export function Navbar({
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Sub-bar on Mobile: Centered Month Navigator + Quick Status */}
+          <div className="md:hidden py-1.5 px-1 flex items-center justify-between border-t border-slate-200/20 text-xs">
+            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-semibold">
+              <Cloud className="w-3 h-3 text-indigo-500" />
+              <span>{isSaving ? "Salvando..." : "Nuvem Ativa"}</span>
+            </div>
+
+            <div
+              className={`flex items-center p-0.5 rounded-xl border text-xs font-bold ${
+                isDark
+                  ? "bg-slate-900 border-slate-800"
+                  : "bg-slate-100 border-slate-200"
+              }`}
+            >
+              <button
+                onClick={handlePrevMonth}
+                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                  isDark
+                    ? "hover:bg-slate-800 text-slate-300 hover:text-white"
+                    : "hover:bg-white text-slate-600 hover:text-slate-900"
+                }`}
+                title="Mês Anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <span className="px-2 font-bold whitespace-nowrap text-xs text-indigo-500">
+                {getMonthYearLabel(selectedMonth)}
+              </span>
+
+              <button
+                onClick={handleNextMonth}
+                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                  isDark
+                    ? "hover:bg-slate-800 text-slate-300 hover:text-white"
+                    : "hover:bg-white text-slate-600 hover:text-slate-900"
+                }`}
+                title="Próximo Mês"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -594,7 +620,8 @@ export function Navbar({
       {/* ========================================================= */}
       <nav
         aria-label="Barra de navegação inferior"
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-lg px-2 py-1 flex items-center justify-around ${
+        translate="no"
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-lg px-2 py-1 flex items-center justify-around notranslate ${
           isDark
             ? "bg-slate-950/90 border-slate-800 text-slate-400"
             : "bg-white/90 border-slate-200 text-slate-600"
@@ -604,24 +631,24 @@ export function Navbar({
         <button
           type="button"
           onClick={() => onSelectSection?.("all")}
-          className={`flex flex-col items-center py-1 px-3 text-[10px] font-bold transition-colors cursor-pointer ${
+          className={`flex flex-col items-center py-1 px-3 text-[10px] font-bold transition-colors cursor-pointer notranslate ${
             activeSection === "all" ? "text-indigo-500" : "hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <Home className="w-5 h-5" />
-          <span>Início</span>
+          <span className="notranslate whitespace-nowrap">Início</span>
         </button>
 
         {/* Cartões */}
         <button
           type="button"
           onClick={onOpenCards}
-          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer relative"
+          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer relative notranslate"
         >
           <CardIcon className="w-5 h-5 text-orange-500" />
-          <span>Cartões</span>
+          <span className="notranslate whitespace-nowrap">Cartões</span>
           {cardCount > 0 && (
-            <span className="absolute top-0.5 right-2 w-4 h-4 bg-orange-500 text-white rounded-full text-[9px] flex items-center justify-center font-bold">
+            <span className="absolute top-0.5 right-2 w-4 h-4 bg-orange-500 text-white rounded-full text-[9px] flex items-center justify-center font-bold notranslate">
               {cardCount}
             </span>
           )}
@@ -631,7 +658,7 @@ export function Navbar({
         <button
           type="button"
           onClick={onOpenNewExpense}
-          className="w-12 h-12 -mt-5 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-indigo-500/40 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+          className="w-12 h-12 -mt-5 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-indigo-500/40 cursor-pointer hover:scale-105 active:scale-95 transition-all notranslate"
           title="Novo Gasto"
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
@@ -641,20 +668,20 @@ export function Navbar({
         <button
           type="button"
           onClick={onOpenNFCe}
-          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer notranslate"
         >
           <QrCode className="w-5 h-5 text-indigo-500" />
-          <span>NFC-e</span>
+          <span className="notranslate whitespace-nowrap">NFC-e</span>
         </button>
 
         {/* Menu Lateral (3 Barrinhas ☰) */}
         <button
           type="button"
           onClick={() => setIsSidebarOpen(true)}
-          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          className="flex flex-col items-center py-1 px-3 text-[10px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer notranslate"
         >
           <Menu className="w-5 h-5" />
-          <span>Menu</span>
+          <span className="notranslate whitespace-nowrap">Menu</span>
         </button>
       </nav>
     </>

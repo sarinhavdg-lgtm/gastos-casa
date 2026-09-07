@@ -4,7 +4,18 @@ const LOCAL_STORAGE_KEY = "gastos_casa_data_v1";
 const LEGACY_STORAGE_KEY = "gestao_financeira_residencial_v1";
 
 export async function fetchFinanceData(): Promise<FinanceData> {
-  // Purge legacy mock data cache if present
+  // Check local cache first
+  let cachedData: FinanceData | null = null;
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem("gastos_casa_backup_auto");
+    if (raw) {
+      cachedData = JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn("Could not read local cache:", e);
+  }
+
+  // Also purge legacy mock key if present
   try {
     if (localStorage.getItem(LEGACY_STORAGE_KEY)) {
       localStorage.removeItem(LEGACY_STORAGE_KEY);
@@ -16,23 +27,33 @@ export async function fetchFinanceData(): Promise<FinanceData> {
   try {
     const res = await fetch("/api/finances");
     if (res.ok) {
-      const data = await res.json();
-      // Also cache in localStorage
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-      return data;
+      const serverData: FinanceData = await res.json();
+      
+      const serverHasData = (serverData.cards && serverData.cards.length > 0) || (serverData.expenses && serverData.expenses.length > 0);
+      const clientHasData = cachedData && ((cachedData.cards && cachedData.cards.length > 0) || (cachedData.expenses && cachedData.expenses.length > 0));
+
+      // If server is empty (e.g., after a new deploy or container restart on Render)
+      // but client has saved cards or expenses, KEEP the client data and re-sync to server!
+      if (!serverHasData && clientHasData && cachedData) {
+        console.info("Server data was empty, restoring from client persistent storage.");
+        saveFinanceData(cachedData).catch(() => {});
+        return cachedData;
+      }
+
+      // If server has data, update local storage and auto-backup
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(serverData));
+      if (serverHasData) {
+        localStorage.setItem("gastos_casa_backup_auto", JSON.stringify(serverData));
+      }
+      return serverData;
     }
   } catch (err) {
     console.warn("Could not fetch from server API, checking localStorage backup:", err);
   }
 
-  // Fallback to localStorage
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch {
-      // ignore
-    }
+  // Fallback to cached data if network failed
+  if (cachedData) {
+    return cachedData;
   }
 
   // If nothing exists, default clean initial structure starting from zero
@@ -44,9 +65,13 @@ export async function fetchFinanceData(): Promise<FinanceData> {
 }
 
 export async function saveFinanceData(data: FinanceData): Promise<boolean> {
-  // Update local storage first for snappy feel
+  // Always update local storage and backup immediately
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    const serialized = JSON.stringify(data);
+    localStorage.setItem(LOCAL_STORAGE_KEY, serialized);
+    if ((data.cards && data.cards.length > 0) || (data.expenses && data.expenses.length > 0)) {
+      localStorage.setItem("gastos_casa_backup_auto", serialized);
+    }
   } catch (e) {
     console.warn("Failed to write to localStorage:", e);
   }
