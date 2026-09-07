@@ -268,7 +268,7 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans antialiased transition-colors ${isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50/80 text-slate-900"}`}>
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden flex flex-col font-sans antialiased transition-colors ${isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50/80 text-slate-900"}`}>
       {/* Top Navbar with Theme Toggle, Tutorial and NFC-e buttons */}
       <Navbar
         selectedMonth={selectedMonth}
@@ -293,7 +293,7 @@ export default function App() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 sm:pb-8 space-y-5 sm:space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 sm:pb-8 space-y-5 sm:space-y-6 overflow-x-hidden">
         {/* 1. CRITICAL HIGHLIGHT: BEST CREDIT CARD PURCHASE DATE */}
         <BestDateBanner
           cards={data.cards}
