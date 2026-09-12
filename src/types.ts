@@ -66,6 +66,7 @@ export interface FinanceData {
   cards: CreditCard[];
   expenses: Expense[];
   lastUpdated?: string;
+  version?: number;
 }
 
 export interface CardRecommendation {

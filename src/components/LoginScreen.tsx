@@ -174,14 +174,21 @@ export function LoginScreen({
         >
           {/* Header icon & title */}
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-indigo-500/20 shadow-xs">
-              <Lock className="w-7 h-7" />
+            <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 mx-auto mb-3.5 bg-slate-900">
+              <img
+                src="/app-icon.png"
+                alt="GASTOS.CASA"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                }}
+              />
             </div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-              Acesso ao Sistema
+              GASTOS<span className="text-indigo-500">.CASA</span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Controle financeiro residencial e gestão de cartões
+              Gestão financeira residencial sincronizada
             </p>
           </div>
 

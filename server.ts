@@ -22,6 +22,7 @@ function getInitialData() {
     monthlyIncome: 0,
     cards: [],
     expenses: [],
+    version: 1,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -31,7 +32,11 @@ function readFinances() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, "utf-8");
-      return JSON.parse(content);
+      const parsed = JSON.parse(content);
+      if (!parsed.version) {
+        parsed.version = 1;
+      }
+      return parsed;
     }
   } catch (err) {
     console.error("Error reading data file, using default:", err);
@@ -50,6 +55,14 @@ function saveFinances(data: any) {
     return false;
   }
 }
+
+// Anti-cache middleware for API routes
+app.use("/api/finances", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -83,22 +96,36 @@ app.post("/api/auth/login", (req, res) => {
   });
 });
 
+// GET status endpoint for fast lightweight polling across multiple devices
+app.get("/api/finances/status", (_req, res) => {
+  const data = readFinances();
+  res.json({
+    version: data.version || 1,
+    lastUpdated: data.lastUpdated || new Date().toISOString(),
+    cardCount: (data.cards || []).length,
+    expenseCount: (data.expenses || []).length,
+  });
+});
+
 // GET all finances
 app.get("/api/finances", (_req, res) => {
   const data = readFinances();
   res.json(data);
 });
 
-// POST save finances
+// POST save finances (with version increment for real-time multi-device sync)
 app.post("/api/finances", (req, res) => {
   const newData = req.body;
   if (!newData || typeof newData !== "object") {
     res.status(400).json({ error: "Invalid data payload" });
     return;
   }
+  const current = readFinances();
+  const nextVersion = (current.version || 1) + 1;
+  newData.version = nextVersion;
   newData.lastUpdated = new Date().toISOString();
   saveFinances(newData);
-  res.json({ success: true, lastUpdated: newData.lastUpdated });
+  res.json({ success: true, version: nextVersion, lastUpdated: newData.lastUpdated });
 });
 
 // POST reset to initial sample

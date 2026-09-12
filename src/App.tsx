@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FinanceData, Expense, CreditCard, ThemeMode } from "./types";
-import { fetchFinanceData, saveFinanceData, resetFinanceData } from "./services/api";
+import { fetchFinanceData, saveFinanceData, resetFinanceData, checkServerStatus } from "./services/api";
 import { Navbar } from "./components/Navbar";
 import { BestDateBanner } from "./components/BestDateBanner";
 import { SummaryCards } from "./components/SummaryCards";
@@ -34,6 +34,17 @@ export default function App() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLiveSyncing, setIsLiveSyncing] = useState(false);
+  const [lastSyncedTime, setLastSyncedTime] = useState<Date | null>(new Date());
+
+  const isSavingRef = useRef(false);
+  const currentVersionRef = useRef(data.version || 1);
+  const lastUpdatedRef = useRef(data.lastUpdated || "");
+
+  useEffect(() => {
+    currentVersionRef.current = data.version || 1;
+    lastUpdatedRef.current = data.lastUpdated || "";
+  }, [data.version, data.lastUpdated]);
 
   // Theme layout: 'light' or 'dark'
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -114,6 +125,7 @@ export default function App() {
       try {
         const initial = await fetchFinanceData();
         setData(initial);
+        setLastSyncedTime(new Date());
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
@@ -123,14 +135,82 @@ export default function App() {
     load();
   }, []);
 
+  // Manual force sync across devices
+  const handleManualSync = useCallback(async () => {
+    if (isLiveSyncing) return;
+    setIsLiveSyncing(true);
+    try {
+      const latest = await fetchFinanceData();
+      setData(latest);
+      setLastSyncedTime(new Date());
+    } catch (err) {
+      console.warn("Manual sync error:", err);
+    } finally {
+      setIsLiveSyncing(false);
+    }
+  }, [isLiveSyncing]);
+
+  // Real-time automatic synchronization between phones/devices
+  useEffect(() => {
+    let isMounted = true;
+
+    const performSyncCheck = async () => {
+      // If currently saving or already live syncing, wait for next tick
+      if (isSavingRef.current) return;
+      try {
+        const status = await checkServerStatus();
+        if (!isMounted || !status) return;
+
+        const currentVer = currentVersionRef.current;
+        const currentUpdated = lastUpdatedRef.current;
+
+        // If the server has a newer version or newer updated timestamp, fetch immediately!
+        if (status.version > currentVer || (status.lastUpdated && status.lastUpdated !== currentUpdated)) {
+          setIsLiveSyncing(true);
+          const latest = await fetchFinanceData();
+          if (isMounted) {
+            setData(latest);
+            setLastSyncedTime(new Date());
+          }
+          setIsLiveSyncing(false);
+        }
+      } catch {
+        // Silently ignore transient network disconnects
+      }
+    };
+
+    // 1. Check server every 3.5 seconds
+    const intervalId = setInterval(performSyncCheck, 3500);
+
+    // 2. Immediately check when user unlocks phone or switches back to browser
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        performSyncCheck();
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+    };
+  }, []);
+
   // Persist helper
   const persistChanges = useCallback(async (updated: FinanceData) => {
     setData(updated);
     setIsSaving(true);
+    isSavingRef.current = true;
     try {
       await saveFinanceData(updated);
+      setLastSyncedTime(new Date());
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
     }
   }, []);
 
@@ -290,6 +370,9 @@ export default function App() {
         onLogout={handleLogout}
         activeSection={activeSection}
         onSelectSection={setActiveSection}
+        isLiveSyncing={isLiveSyncing}
+        onManualSync={handleManualSync}
+        lastSyncedTime={lastSyncedTime}
       />
 
       {/* Main Container */}

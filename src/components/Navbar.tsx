@@ -23,6 +23,7 @@ import {
   Home,
   CheckCircle2,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -42,6 +43,9 @@ interface NavbarProps {
   onLogout?: () => void;
   activeSection?: "all" | "charts" | "compare" | "table";
   onSelectSection?: (section: "all" | "charts" | "compare" | "table") => void;
+  isLiveSyncing?: boolean;
+  onManualSync?: () => void;
+  lastSyncedTime?: Date | null;
 }
 
 export function Navbar({
@@ -61,6 +65,9 @@ export function Navbar({
   onLogout,
   activeSection = "all",
   onSelectSection,
+  isLiveSyncing = false,
+  onManualSync,
+  lastSyncedTime,
 }: NavbarProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -97,25 +104,39 @@ export function Navbar({
           {/* Main header row */}
           <div className="flex items-center justify-between h-14 md:h-16 gap-2">
             {/* Left: Logo & Branding */}
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm sm:text-base shadow-md shrink-0">
-                $
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900">
+                <img
+                  src="/app-icon.png"
+                  alt="GASTOS.CASA"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                  }}
+                />
               </div>
               <div className="leading-tight">
                 <div className="flex items-center gap-1.5">
                   <span className="text-base sm:text-lg font-extrabold tracking-tight">
                     GASTOS<span className="text-indigo-500">.CASA</span>
                   </span>
-                  <span
-                    className={`hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${
-                      isDark
-                        ? "bg-indigo-950/60 text-indigo-300 border-indigo-800"
-                        : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  
+                  {/* Real-time sync badge / trigger */}
+                  <button
+                    type="button"
+                    onClick={onManualSync}
+                    title="Sincronização em tempo real entre celulares. Toque para forçar atualização agora."
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold border transition-all cursor-pointer ${
+                      isLiveSyncing || isSaving
+                        ? "bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-300 animate-pulse"
+                        : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-800 hover:bg-emerald-100"
                     }`}
                   >
-                    <Cloud className="w-2.5 h-2.5 text-indigo-500" />
-                    {isSaving ? "Salvando..." : "Nuvem"}
-                  </span>
+                    <RefreshCw className={`w-2.5 h-2.5 ${isLiveSyncing || isSaving ? "animate-spin text-indigo-600" : "text-emerald-600"}`} />
+                    <span className="hidden xs:inline">
+                      {isLiveSyncing || isSaving ? "Sincronizando..." : "Ao Vivo"}
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -291,8 +312,15 @@ export function Navbar({
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-200/20 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-md">
-                  $
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900">
+                  <img
+                    src="/app-icon.png"
+                    alt="GASTOS.CASA"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                    }}
+                  />
                 </div>
                 <div>
                   <h2 className="text-base font-extrabold tracking-tight">
@@ -323,10 +351,14 @@ export function Navbar({
                     <div className="text-xs font-bold truncate max-w-[140px]">
                       {currentUser || "Administrador"}
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-emerald-500 font-semibold">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Sincronizado na Nuvem
-                    </div>
+                    <button
+                      type="button"
+                      onClick={onManualSync}
+                      className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold hover:underline cursor-pointer text-left"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isLiveSyncing || isSaving ? "animate-spin text-indigo-500" : ""}`} />
+                      <span>{isLiveSyncing ? "Atualizando..." : "Sincronizado entre celulares"}</span>
+                    </button>
                   </div>
                 </div>
 
