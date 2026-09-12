@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Expense, CreditCard } from "../types";
-import { formatBRL, CATEGORY_DETAILS, MONTH_NAMES_PT } from "../utils/formatters";
+import { Expense, CreditCard, CategoryItem } from "../types";
+import { formatBRL, getCategoryDetails, MONTH_NAMES_PT } from "../utils/formatters";
 import {
   ResponsiveContainer,
   BarChart,
@@ -22,6 +22,7 @@ interface InteractiveChartsProps {
   cards: CreditCard[];
   monthlyIncome: number;
   selectedMonth: string; // YYYY-MM
+  categories?: CategoryItem[];
   isDark?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function InteractiveCharts({
   cards,
   monthlyIncome,
   selectedMonth,
+  categories,
   isDark = false,
 }: InteractiveChartsProps) {
   const [activeTab, setActiveTab] = useState<"categories" | "history" | "payment">("categories");
@@ -45,16 +47,16 @@ export function InteractiveCharts({
 
     return Object.entries(totals)
       .map(([catKey, amount]) => {
-        const catInfo = CATEGORY_DETAILS[catKey as keyof typeof CATEGORY_DETAILS];
+        const catInfo = getCategoryDetails(catKey, categories);
         return {
-          name: catInfo?.label || catKey,
+          name: catInfo.label,
           key: catKey,
           value: Math.round(amount * 100) / 100,
-          color: catInfo?.color || "#64748b",
+          color: catInfo.color,
         };
       })
       .sort((a, b) => b.value - a.value);
-  }, [expenses, selectedMonth]);
+  }, [expenses, selectedMonth, categories]);
 
   // 2. Data for Monthly History (all unique months)
   const historyData = useMemo(() => {

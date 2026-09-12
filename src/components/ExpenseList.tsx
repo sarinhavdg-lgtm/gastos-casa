@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Expense, CreditCard, ExpenseCategory, PaymentMethod } from "../types";
-import { formatBRL, formatDateBR, CATEGORY_DETAILS, PAYMENT_METHOD_LABELS } from "../utils/formatters";
+import { Expense, CreditCard, ExpenseCategory, PaymentMethod, CategoryItem } from "../types";
+import { formatBRL, formatDateBR, getCategoryDetails, DEFAULT_CATEGORIES, PAYMENT_METHOD_LABELS } from "../utils/formatters";
 import {
   Search,
   Filter,
@@ -14,6 +14,7 @@ import {
   Plus,
   ArrowUpDown,
   Receipt,
+  Palette,
 } from "lucide-react";
 
 interface ExpenseListProps {
@@ -27,6 +28,8 @@ interface ExpenseListProps {
   onOpenNFCe?: () => void;
   onViewNFCe?: (expense: Expense) => void;
   onOpenPdfExport?: () => void;
+  categories?: CategoryItem[];
+  onOpenCategoryManager?: () => void;
   isDark?: boolean;
 }
 
@@ -41,8 +44,11 @@ export function ExpenseList({
   onOpenNFCe,
   onViewNFCe,
   onOpenPdfExport,
+  categories,
+  onOpenCategoryManager,
   isDark = false,
 }: ExpenseListProps) {
+  const activeCategories = categories && categories.length > 0 ? categories : DEFAULT_CATEGORIES;
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -126,7 +132,7 @@ export function ExpenseList({
       return [
         e.date,
         `"${e.description.replace(/"/g, '""')}"`,
-        CATEGORY_DETAILS[e.category]?.label || e.category,
+        getCategoryDetails(e.category, categories).label || e.category,
         e.amount.toFixed(2),
         PAYMENT_METHOD_LABELS[e.paymentMethod] || e.paymentMethod,
         `"${card}"`,
@@ -199,6 +205,22 @@ export function ExpenseList({
               </button>
             )}
 
+            {onOpenCategoryManager && (
+              <button
+                id="btn-open-category-manager-list"
+                onClick={onOpenCategoryManager}
+                className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                  isDark
+                    ? "bg-purple-950/50 hover:bg-purple-900/60 border-purple-800 text-purple-300"
+                    : "bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+                }`}
+                title="Editar, Renomear ou Criar Categorias da Casa"
+              >
+                <Palette className="w-4 h-4 text-purple-500" />
+                <span className="hidden sm:inline">Categorias</span>
+              </button>
+            )}
+
             <button
               onClick={handleExportCSV}
               className={`px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer ${
@@ -247,9 +269,9 @@ export function ExpenseList({
               className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs ${bgInput}`}
             >
               <option value="all">Todas as Categorias</option>
-              {Object.entries(CATEGORY_DETAILS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
+              {activeCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
                 </option>
               ))}
             </select>
@@ -346,7 +368,7 @@ export function ExpenseList({
             </thead>
             <tbody className={`divide-y text-xs ${isDark ? "divide-slate-800 text-slate-300" : "divide-slate-100 text-slate-700"}`}>
               {filteredExpenses.map((exp) => {
-                const cat = CATEGORY_DETAILS[exp.category];
+                const cat = getCategoryDetails(exp.category, categories);
                 const card = exp.cardId ? cardMap.get(exp.cardId) : null;
                 const isPaid = exp.status === "paid";
                 const hasNFCe = exp.items && exp.items.length > 0;

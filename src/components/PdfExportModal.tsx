@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Expense, CreditCard } from "../types";
-import { formatBRL, formatDateBR, CATEGORY_DETAILS, PAYMENT_METHOD_LABELS } from "../utils/formatters";
+import { Expense, CreditCard, CategoryItem } from "../types";
+import { formatBRL, formatDateBR, getCategoryDetails, PAYMENT_METHOD_LABELS } from "../utils/formatters";
 import {
   FileText,
   Download,
@@ -25,6 +25,7 @@ interface PdfExportModalProps {
   expenses: Expense[];
   cards: CreditCard[];
   selectedMonth: string;
+  categories?: CategoryItem[];
   isDark?: boolean;
 }
 
@@ -34,6 +35,7 @@ export function PdfExportModal({
   expenses,
   cards,
   selectedMonth,
+  categories,
   isDark = false,
 }: PdfExportModalProps) {
   // Scope: "all" (todos os gastos) vs "month" (mês selecionado)
@@ -228,7 +230,7 @@ export function PdfExportModal({
 
     const tableRows = targetExpenses.map((e) => {
       const dateStr = formatDateBR(e.date);
-      const categoryLabel = CATEGORY_DETAILS[e.category]?.label || e.category;
+      const categoryLabel = getCategoryDetails(e.category, categories).label;
       
       let payDesc = PAYMENT_METHOD_LABELS[e.paymentMethod] || e.paymentMethod;
       if (e.cardId && cardMap.has(e.cardId)) {
@@ -413,7 +415,8 @@ export function PdfExportModal({
       const cardName = e.cardId && cardMap.has(e.cardId) ? cardMap.get(e.cardId)!.name : "Pix/Dinheiro";
       const statusIcon = e.status === "paid" ? "✅" : "⏳";
       const parcelas = e.installments && e.installments.total > 1 ? ` (${e.installments.current}/${e.installments.total}x)` : "";
-      text += `${statusIcon} ${formatDateBR(e.date)} - *${e.description}*: ${formatBRL(e.amount)} [${cardName}${parcelas}]\n`;
+      const catLabel = getCategoryDetails(e.category, categories).label;
+      text += `${statusIcon} ${formatDateBR(e.date)} - *${e.description}* (${catLabel}): ${formatBRL(e.amount)} [${cardName}${parcelas}]\n`;
     });
 
     return text;

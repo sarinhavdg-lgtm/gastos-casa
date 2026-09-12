@@ -1,8 +1,9 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { Expense, ExpenseCategory, PaymentMethod, CreditCard } from "../types";
-import { CATEGORY_DETAILS, PAYMENT_METHOD_LABELS, formatDateBR } from "../utils/formatters";
+import { Expense, ExpenseCategory, PaymentMethod, CreditCard, CategoryItem } from "../types";
+import { DEFAULT_CATEGORIES, getCategoryDetails, PAYMENT_METHOD_LABELS, formatDateBR } from "../utils/formatters";
 import { getInvoiceMonthForExpense } from "../utils/creditCardUtils";
-import { X, Check, CreditCard as CardIcon, Sparkles, Calendar, DollarSign } from "lucide-react";
+import { CategoryManagerModal } from "./CategoryManagerModal";
+import { X, Check, CreditCard as CardIcon, Sparkles, Calendar, DollarSign, Settings2, Plus } from "lucide-react";
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -10,17 +11,22 @@ interface ExpenseModalProps {
   onSave: (expense: Omit<Expense, "id">, id?: string) => void;
   cards: CreditCard[];
   expenseToEdit?: Expense | null;
+  categories?: CategoryItem[];
+  onSaveCategories?: (categories: CategoryItem[]) => void;
+  isDark?: boolean;
 }
 
 const QUICK_SUGGESTIONS = [
-  { label: "Supermercado", category: "alimentacao" as ExpenseCategory },
-  { label: "Conta de Luz (Energia)", category: "energia" as ExpenseCategory },
-  { label: "Conta de Água", category: "agua" as ExpenseCategory },
-  { label: "Diarista / Faxina", category: "empregada" as ExpenseCategory },
-  { label: "Condomínio", category: "moradia" as ExpenseCategory },
-  { label: "Internet Fibra", category: "internet" as ExpenseCategory },
-  { label: "Gás de Cozinha", category: "gas" as ExpenseCategory },
-  { label: "Farmácia / Remédios", category: "saude" as ExpenseCategory },
+  { label: "Supermercado", category: "mercado" },
+  { label: "Conta de Luz (Energia)", category: "energia" },
+  { label: "Conta de Água", category: "agua" },
+  { label: "Diarista / Faxina", category: "empregada" },
+  { label: "Condomínio / Aluguel", category: "moradia" },
+  { label: "Internet Fibra", category: "internet" },
+  { label: "Gás de Cozinha", category: "gas" },
+  { label: "Combustível", category: "combustivel" },
+  { label: "Farmácia / Saúde", category: "saude" },
+  { label: "Ração / Pet", category: "pets" },
 ];
 
 export function ExpenseModal({
@@ -29,7 +35,11 @@ export function ExpenseModal({
   onSave,
   cards,
   expenseToEdit,
+  categories,
+  onSaveCategories,
+  isDark = false,
 }: ExpenseModalProps) {
+  const activeCategories = categories && categories.length > 0 ? categories : DEFAULT_CATEGORIES;
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("alimentacao");
   const [amount, setAmount] = useState("");
@@ -38,6 +48,7 @@ export function ExpenseModal({
   const [cardId, setCardId] = useState<string>("");
   const [status, setStatus] = useState<"paid" | "pending">("paid");
   const [notes, setNotes] = useState("");
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
   useEffect(() => {
     if (expenseToEdit) {
@@ -210,17 +221,30 @@ export function ExpenseModal({
 
           {/* Category Selector */}
           <div>
-            <label className="block font-medium text-slate-700 mb-1.5">
-              Categoria da Casa *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {Object.entries(CATEGORY_DETAILS).map(([catKey, details]) => {
-                const isSelected = category === catKey;
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block font-medium text-slate-700">
+                Categoria da Casa *
+              </label>
+              <button
+                id="btn-open-category-manager"
+                type="button"
+                onClick={() => setIsCategoryManagerOpen(true)}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors"
+                title="Personalizar, renomear ou criar novas categorias"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                <span>Editar / Gerenciar Categorias</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+              {activeCategories.map((catItem) => {
+                const isSelected = category === catItem.id;
                 return (
                   <button
-                    key={catKey}
+                    key={catItem.id}
                     type="button"
-                    onClick={() => setCategory(catKey as ExpenseCategory)}
+                    onClick={() => setCategory(catItem.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl text-left border text-xs font-medium transition-all cursor-pointer ${
                       isSelected
                         ? "bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs"
@@ -229,12 +253,22 @@ export function ExpenseModal({
                   >
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: details.color }}
+                      style={{ backgroundColor: catItem.color }}
                     />
-                    <span className="truncate">{details.label}</span>
+                    <span className="truncate">{catItem.label}</span>
                   </button>
                 );
               })}
+
+              {/* Quick button to add new category directly */}
+              <button
+                type="button"
+                onClick={() => setIsCategoryManagerOpen(true)}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-100/60 text-indigo-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-indigo-600" />
+                <span>+ Nova Categoria</span>
+              </button>
             </div>
           </div>
 
@@ -370,6 +404,23 @@ export function ExpenseModal({
           </div>
         </form>
       </div>
+
+      {/* Submodal for Category Manager */}
+      <CategoryManagerModal
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        categories={activeCategories}
+        onSaveCategories={(updated) => {
+          if (onSaveCategories) {
+            onSaveCategories(updated);
+          }
+        }}
+        onSelectCategory={(catId) => {
+          setCategory(catId);
+          setIsCategoryManagerOpen(false);
+        }}
+        isDark={isDark}
+      />
     </div>
   );
 }

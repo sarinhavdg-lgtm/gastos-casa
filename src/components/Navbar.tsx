@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   RefreshCw,
   FileText,
+  Palette,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -34,6 +35,7 @@ interface NavbarProps {
   cardCount: number;
   onOpenNewExpense: () => void;
   onOpenCards: () => void;
+  onOpenCategories?: () => void;
   onOpenShare: () => void;
   onOpenNFCe: () => void;
   onOpenTutorial: () => void;
@@ -57,6 +59,7 @@ export function Navbar({
   cardCount,
   onOpenNewExpense,
   onOpenCards,
+  onOpenCategories,
   onOpenShare,
   onOpenNFCe,
   onOpenTutorial,
@@ -234,6 +237,23 @@ export function Navbar({
                   </span>
                 )}
               </button>
+
+              {/* Categories button */}
+              {onOpenCategories && (
+                <button
+                  id="btn-navbar-categories-top"
+                  onClick={onOpenCategories}
+                  className={`px-3 py-2 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    isDark
+                      ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
+                      : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700"
+                  }`}
+                  title="Editar e Gerenciar Categorias da Casa"
+                >
+                  <Palette className="w-4 h-4 text-purple-500" />
+                  <span>Categorias</span>
+                </button>
+              )}
 
               {/* Theme Toggle Button */}
               <button
@@ -576,6 +596,27 @@ export function Navbar({
                 </span>
 
                 {/* Theme Mode Toggle */}
+                {onOpenCategories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeSidebar();
+                      onOpenCategories();
+                    }}
+                    className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                      isDark ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Palette className="w-4 h-4 text-purple-500" />
+                      <span>Gerenciar Categorias da Casa</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                      Editar
+                    </span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={onToggleTheme}

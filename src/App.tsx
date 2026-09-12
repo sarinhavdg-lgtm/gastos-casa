@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { FinanceData, Expense, CreditCard, ThemeMode } from "./types";
+import { FinanceData, Expense, CreditCard, ThemeMode, CategoryItem } from "./types";
 import { fetchFinanceData, saveFinanceData, resetFinanceData, checkServerStatus } from "./services/api";
+import { DEFAULT_CATEGORIES } from "./utils/formatters";
 import { Navbar } from "./components/Navbar";
 import { BestDateBanner } from "./components/BestDateBanner";
 import { SummaryCards } from "./components/SummaryCards";
@@ -16,6 +17,7 @@ import { NFCeDetailsModal } from "./components/NFCeDetailsModal";
 import { TutorialModal } from "./components/TutorialModal";
 import { LoginScreen } from "./components/LoginScreen";
 import { PdfExportModal } from "./components/PdfExportModal";
+import { CategoryManagerModal } from "./components/CategoryManagerModal";
 import {
   RotateCcw,
   ShieldCheck,
@@ -120,6 +122,7 @@ export default function App() {
   const [viewingNFCeExpense, setViewingNFCeExpense] = useState<Expense | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -308,6 +311,11 @@ export default function App() {
     persistChanges({ ...data, monthlyIncome: newIncome });
   };
 
+  // Handle Categories
+  const handleSaveCategories = (updatedCategories: CategoryItem[]) => {
+    persistChanges({ ...data, categories: updatedCategories });
+  };
+
   // Reset data to empty
   const handleResetData = async () => {
     if (confirm("Deseja zerar todas as informações para começar do zero?")) {
@@ -339,12 +347,30 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-800"}`}>
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-semibold tracking-wide">
-            Carregando suas finanças residenciais...
-          </p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white select-none transition-opacity duration-300">
+        <div className="relative flex flex-col items-center justify-center">
+          {/* Ambient soft glow */}
+          <div className="absolute w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+
+          {/* App Brand Logo Image */}
+          <div className="relative z-10 p-2 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl">
+            <img
+              src="/app-icon.png"
+              alt="GASTOS.CASA"
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-md transition-transform duration-700 animate-pulse"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes("icon-192.png")) {
+                  target.src = "/icon-192.png";
+                }
+              }}
+            />
+          </div>
+
+          {/* Minimalist discreet pulse progress line */}
+          <div className="mt-8 w-24 h-1 bg-slate-850 rounded-full overflow-hidden">
+            <div className="w-full h-full bg-linear-to-r from-indigo-500 to-emerald-400 animate-pulse rounded-full" />
+          </div>
         </div>
       </div>
     );
@@ -363,6 +389,7 @@ export default function App() {
           setIsExpenseModalOpen(true);
         }}
         onOpenCards={() => setIsCardsModalOpen(true)}
+        onOpenCategories={() => setIsCategoryManagerOpen(true)}
         onOpenShare={() => setIsShareModalOpen(true)}
         onOpenNFCe={() => setIsNFCeModalOpen(true)}
         onOpenTutorial={() => setIsTutorialOpen(true)}
@@ -513,6 +540,7 @@ export default function App() {
                 cards={data.cards}
                 monthlyIncome={data.monthlyIncome}
                 selectedMonth={selectedMonth}
+                categories={data.categories}
                 isDark={isDark}
               />
             )}
@@ -533,6 +561,8 @@ export default function App() {
                 expenses={data.expenses}
                 cards={data.cards}
                 selectedMonth={selectedMonth}
+                categories={data.categories}
+                onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
                 onToggleStatus={handleToggleExpenseStatus}
                 onEditExpense={(exp) => {
                   setExpenseToEdit(exp);
@@ -607,6 +637,17 @@ export default function App() {
         onSave={handleSaveExpense}
         cards={data.cards}
         expenseToEdit={expenseToEdit}
+        categories={data.categories}
+        onSaveCategories={handleSaveCategories}
+        isDark={isDark}
+      />
+
+      <CategoryManagerModal
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        categories={data.categories || DEFAULT_CATEGORIES}
+        onSaveCategories={handleSaveCategories}
+        isDark={isDark}
       />
 
       <CreditCardManager
@@ -656,6 +697,7 @@ export default function App() {
         expenses={data.expenses}
         cards={data.cards}
         selectedMonth={selectedMonth}
+        categories={data.categories}
         isDark={isDark}
       />
     </div>
