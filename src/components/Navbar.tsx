@@ -125,11 +125,11 @@ export function Navbar({
                 }`}
               >
                 <img
-                  src={customLogo || "/app-icon.png"}
+                  src={customLogo || "/app-icon.png?v=2"}
                   alt="GASTOS.CASA"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                    (e.target as HTMLImageElement).src = "/app-icon.jpg?v=2";
                   }}
                 />
               </button>
@@ -374,11 +374,11 @@ export function Navbar({
                   title="Toque para mudar a foto ou logo do aplicativo"
                 >
                   <img
-                    src={customLogo || "/app-icon.png"}
+                    src={customLogo || "/app-icon.png?v=2"}
                     alt="GASTOS.CASA"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                      (e.target as HTMLImageElement).src = "/app-icon.jpg?v=2";
                     }}
                   />
                 </button>

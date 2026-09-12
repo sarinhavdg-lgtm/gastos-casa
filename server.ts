@@ -46,15 +46,56 @@ function readFinances() {
   return initial;
 }
 
+function syncPublicIconsFromData(data: any) {
+  if (!data?.customLogo || typeof data.customLogo !== "string" || !data.customLogo.startsWith("data:image/")) {
+    return;
+  }
+  try {
+    const base64Data = data.customLogo.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+    const targets = [
+      path.join(process.cwd(), "public", "app-icon.png"),
+      path.join(process.cwd(), "public", "app-icon.jpg"),
+      path.join(process.cwd(), "public", "icon-192.png"),
+      path.join(process.cwd(), "public", "icon-512.png"),
+    ];
+    for (const target of targets) {
+      fs.writeFileSync(target, buffer);
+    }
+  } catch (err) {
+    console.warn("Could not write public icon files:", err);
+  }
+}
+
 function saveFinances(data: any) {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+    syncPublicIconsFromData(data);
     return true;
   } catch (err) {
     console.error("Error saving data file:", err);
     return false;
   }
 }
+
+// Direct dynamic icon serving with aggressive cache invalidation
+app.get(["/app-icon.png", "/app-icon.jpg", "/icon-192.png", "/icon-512.png"], (_req, res, next) => {
+  const data = readFinances();
+  if (data?.customLogo && typeof data.customLogo === "string" && data.customLogo.startsWith("data:image/")) {
+    try {
+      const base64Data = data.customLogo.replace(/^data:image\/\w+;base64,/, "");
+      const imgBuffer = Buffer.from(base64Data, "base64");
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      return res.end(imgBuffer);
+    } catch {
+      // fallback to static
+    }
+  }
+  next();
+});
 
 // Anti-cache middleware for API routes
 app.use("/api/finances", (_req, res, next) => {
@@ -136,6 +177,9 @@ app.post("/api/finances/reset", (_req, res) => {
 });
 
 async function startServer() {
+  // Sync icon files on startup if custom logo exists
+  syncPublicIconsFromData(readFinances());
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

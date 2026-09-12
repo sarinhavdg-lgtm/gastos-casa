@@ -32,10 +32,18 @@ import {
 } from "lucide-react";
 
 export default function App() {
-  const [data, setData] = useState<FinanceData>({
-    monthlyIncome: 0,
-    cards: [],
-    expenses: [],
+  const [data, setData] = useState<FinanceData>(() => {
+    try {
+      const raw = localStorage.getItem("gastos_casa_data_v1") || localStorage.getItem("gastos_casa_backup_auto");
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return {
+      monthlyIncome: 0,
+      cards: [],
+      expenses: [],
+    };
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -365,13 +373,13 @@ export default function App() {
           {/* App Brand Logo Image */}
           <div className="relative z-10 p-2 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl">
             <img
-              src={data.customLogo || "/app-icon.png"}
+              src={data.customLogo || `/app-icon.png?v=${data.version || 1}`}
               alt="GASTOS.CASA"
               className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-md transition-transform duration-700 animate-pulse"
               onError={(e) => {
                 const target = e.currentTarget;
-                if (!target.src.includes("icon-192.png")) {
-                  target.src = "/icon-192.png";
+                if (!target.src.includes("user-logo.png")) {
+                  target.src = "/user-logo.png";
                 }
               }}
             />

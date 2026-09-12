@@ -178,11 +178,11 @@ export function LoginScreen({
           <div className="text-center mb-6">
             <div className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800 mx-auto mb-3.5 bg-slate-900">
               <img
-                src={customLogo || "/app-icon.png"}
+                src={customLogo || "/app-icon.png?v=2"}
                 alt="GASTOS.CASA"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/app-icon.jpg";
+                  (e.target as HTMLImageElement).src = "/app-icon.jpg?v=2";
                 }}
               />
             </div>
