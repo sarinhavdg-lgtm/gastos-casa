@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -36,6 +37,7 @@ interface NavbarProps {
   onOpenShare: () => void;
   onOpenNFCe: () => void;
   onOpenTutorial: () => void;
+  onOpenPdf?: () => void;
   theme: ThemeMode;
   onToggleTheme: () => void;
   isSaving: boolean;
@@ -58,6 +60,7 @@ export function Navbar({
   onOpenShare,
   onOpenNFCe,
   onOpenTutorial,
+  onOpenPdf,
   theme,
   onToggleTheme,
   isSaving,
@@ -180,6 +183,23 @@ export function Navbar({
 
             {/* Desktop-Only Action Buttons (hidden on mobile) */}
             <div className="hidden md:flex items-center gap-2">
+              {/* Relatório PDF button */}
+              {onOpenPdf && (
+                <button
+                  id="btn-navbar-pdf-desktop"
+                  onClick={onOpenPdf}
+                  className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    isDark
+                      ? "bg-red-950/60 hover:bg-red-900 border-red-800 text-red-300"
+                      : "bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+                  }`}
+                  title="Visualizar, Baixar e Compartilhar Todos os Gastos em PDF"
+                >
+                  <FileText className="w-4 h-4 text-red-500" />
+                  <span>Relatório PDF</span>
+                </button>
+              )}
+
               {/* Scan NFC-e button */}
               <button
                 id="btn-navbar-scan-nfce-top"
@@ -420,6 +440,30 @@ export function Navbar({
                     Câmera
                   </span>
                 </button>
+
+                {/* Relatório PDF button */}
+                {onOpenPdf && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeSidebar();
+                      onOpenPdf();
+                    }}
+                    className={`w-full p-3 rounded-xl border font-bold text-xs flex items-center justify-between transition-all cursor-pointer ${
+                      isDark
+                        ? "bg-red-950/40 hover:bg-red-900/50 border-red-800/80 text-red-300"
+                        : "bg-red-50/80 hover:bg-red-100 border-red-200 text-red-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-4 h-4 text-red-500" />
+                      <span>Relatório de Gastos em PDF</span>
+                    </div>
+                    <span className="text-[9px] bg-red-500 text-white px-2 py-0.5 rounded-full font-extrabold uppercase">
+                      PDF & Share
+                    </span>
+                  </button>
+                )}
 
                 {/* Credit Cards Manager */}
                 <button

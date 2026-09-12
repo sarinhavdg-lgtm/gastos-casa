@@ -10,6 +10,7 @@ import {
   Smartphone,
   Receipt,
   HelpCircle,
+  FileText,
 } from "lucide-react";
 
 interface CardsSidebarPanelProps {
@@ -20,6 +21,7 @@ interface CardsSidebarPanelProps {
   onOpenShare: () => void;
   onOpenNFCe: () => void;
   onOpenTutorial: () => void;
+  onOpenPdf?: () => void;
   onViewNFCe?: (expense: Expense) => void;
 }
 
@@ -31,6 +33,7 @@ export function CardsSidebarPanel({
   onOpenShare,
   onOpenNFCe,
   onOpenTutorial,
+  onOpenPdf,
   onViewNFCe,
 }: CardsSidebarPanelProps) {
   // Sort expenses by date descending
@@ -182,6 +185,17 @@ export function CardsSidebarPanel({
           <Plus className="w-4 h-4" />
           Adicionar Gasto da Casa
         </button>
+
+        {onOpenPdf && (
+          <button
+            id="btn-sidebar-pdf-export"
+            onClick={onOpenPdf}
+            className="w-full py-2.5 bg-red-950/40 hover:bg-red-900/50 border border-red-800/80 rounded-xl text-red-300 hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <FileText className="w-3.5 h-3.5 text-red-400" />
+            Relatório de Gastos em PDF
+          </button>
+        )}
 
         <button
           id="btn-sidebar-import-nfce"

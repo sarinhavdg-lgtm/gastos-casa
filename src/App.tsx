@@ -15,6 +15,7 @@ import { NFCeImportModal } from "./components/NFCeImportModal";
 import { NFCeDetailsModal } from "./components/NFCeDetailsModal";
 import { TutorialModal } from "./components/TutorialModal";
 import { LoginScreen } from "./components/LoginScreen";
+import { PdfExportModal } from "./components/PdfExportModal";
 import {
   RotateCcw,
   ShieldCheck,
@@ -24,6 +25,7 @@ import {
   ListOrdered,
   Receipt,
   HelpCircle,
+  FileText,
 } from "lucide-react";
 
 export default function App() {
@@ -117,6 +119,7 @@ export default function App() {
   const [isNFCeDetailsOpen, setIsNFCeDetailsOpen] = useState(false);
   const [viewingNFCeExpense, setViewingNFCeExpense] = useState<Expense | null>(null);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -363,6 +366,7 @@ export default function App() {
         onOpenShare={() => setIsShareModalOpen(true)}
         onOpenNFCe={() => setIsNFCeModalOpen(true)}
         onOpenTutorial={() => setIsTutorialOpen(true)}
+        onOpenPdf={() => setIsPdfModalOpen(true)}
         theme={theme}
         onToggleTheme={handleToggleTheme}
         isSaving={isSaving}
@@ -471,6 +475,20 @@ export default function App() {
             </button>
 
             <button
+              id="btn-quick-export-pdf"
+              onClick={() => setIsPdfModalOpen(true)}
+              className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isDark
+                  ? "bg-red-950/60 hover:bg-red-900 border-red-800 text-red-300"
+                  : "bg-red-50 hover:bg-red-100 border-red-200 text-red-700 shadow-2xs"
+              }`}
+              title="Gerar, Baixar e Compartilhar Todos os Gastos em PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-red-500" />
+              Relatório PDF
+            </button>
+
+            <button
               onClick={() => setIsShareModalOpen(true)}
               className={`hidden sm:inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
                 isDark
@@ -527,6 +545,7 @@ export default function App() {
                 }}
                 onOpenNFCe={() => setIsNFCeModalOpen(true)}
                 onViewNFCe={handleViewNFCe}
+                onOpenPdfExport={() => setIsPdfModalOpen(true)}
                 isDark={isDark}
               />
             )}
@@ -545,6 +564,7 @@ export default function App() {
               onOpenShare={() => setIsShareModalOpen(true)}
               onOpenNFCe={() => setIsNFCeModalOpen(true)}
               onOpenTutorial={() => setIsTutorialOpen(true)}
+              onOpenPdf={() => setIsPdfModalOpen(true)}
               onViewNFCe={handleViewNFCe}
             />
           </div>
@@ -627,6 +647,15 @@ export default function App() {
       <TutorialModal
         isOpen={isTutorialOpen}
         onClose={() => setIsTutorialOpen(false)}
+        isDark={isDark}
+      />
+
+      <PdfExportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        expenses={data.expenses}
+        cards={data.cards}
+        selectedMonth={selectedMonth}
         isDark={isDark}
       />
     </div>

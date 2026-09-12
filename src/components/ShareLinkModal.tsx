@@ -27,7 +27,7 @@ export function ShareLinkModal({
     typeof window !== "undefined"
       ? window.location.origin.includes("run.app")
         ? window.location.origin
-        : window.location.href
+        : "https://ais-dev-bwcuvdb7r7lesa4suecnxf-128520403152.us-east1.run.app"
       : "https://ais-dev-bwcuvdb7r7lesa4suecnxf-128520403152.us-east1.run.app";
 
   const handleCopyLink = () => {
@@ -257,6 +257,17 @@ export function ShareLinkModal({
                 Escaneie o QR Code acima para abrir instantaneamente esta aplicação no seu smartphone sem precisar digitar o link!
               </p>
             </div>
+          </div>
+
+          {/* Instruções para Sincronização entre 2 celulares */}
+          <div className="p-3.5 bg-emerald-50/90 border border-emerald-300/80 rounded-xl text-xs text-emerald-950 space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Sincronização entre dois celulares:</span>
+            </div>
+            <p className="text-emerald-900/90 leading-relaxed">
+              Para os dois celulares compartilharem as mesmas contas e sincronizarem em tempo real, <strong>ambos devem acessar o mesmo link oficial acima</strong>. Envie pelo <strong>WhatsApp</strong> para o outro celular para abrirem juntos!
+            </p>
           </div>
 
           {/* Dica para liberar para outros celulares */}

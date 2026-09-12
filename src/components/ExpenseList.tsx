@@ -10,6 +10,7 @@ import {
   Trash2,
   CreditCard as CardIcon,
   FileSpreadsheet,
+  FileText,
   Plus,
   ArrowUpDown,
   Receipt,
@@ -25,6 +26,7 @@ interface ExpenseListProps {
   onOpenNewExpense: () => void;
   onOpenNFCe?: () => void;
   onViewNFCe?: (expense: Expense) => void;
+  onOpenPdfExport?: () => void;
   isDark?: boolean;
 }
 
@@ -38,6 +40,7 @@ export function ExpenseList({
   onOpenNewExpense,
   onOpenNFCe,
   onViewNFCe,
+  onOpenPdfExport,
   isDark = false,
 }: ExpenseListProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -177,6 +180,22 @@ export function ExpenseList({
               >
                 <Receipt className="w-4 h-4 text-indigo-500" />
                 Importar NFC-e
+              </button>
+            )}
+
+            {onOpenPdfExport && (
+              <button
+                id="btn-open-pdf-modal"
+                onClick={onOpenPdfExport}
+                className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                  isDark
+                    ? "bg-red-950/50 hover:bg-red-900/60 border-red-800 text-red-300"
+                    : "bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+                }`}
+                title="Visualizar, Baixar e Compartilhar Todos os Gastos em PDF"
+              >
+                <FileText className="w-4 h-4 text-red-500" />
+                <span className="hidden sm:inline">Relatório</span> PDF
               </button>
             )}
 
