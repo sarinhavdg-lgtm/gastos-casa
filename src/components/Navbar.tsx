@@ -26,6 +26,7 @@ import {
   RefreshCw,
   FileText,
   Palette,
+  Image as ImageIcon,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -36,6 +37,8 @@ interface NavbarProps {
   onOpenNewExpense: () => void;
   onOpenCards: () => void;
   onOpenCategories?: () => void;
+  onOpenCustomLogo?: () => void;
+  customLogo?: string;
   onOpenShare: () => void;
   onOpenNFCe: () => void;
   onOpenTutorial: () => void;
@@ -60,6 +63,8 @@ export function Navbar({
   onOpenNewExpense,
   onOpenCards,
   onOpenCategories,
+  onOpenCustomLogo,
+  customLogo,
   onOpenShare,
   onOpenNFCe,
   onOpenTutorial,
@@ -111,16 +116,23 @@ export function Navbar({
           <div className="flex items-center justify-between h-14 md:h-16 gap-2">
             {/* Left: Logo & Branding */}
             <div className="flex items-center gap-2.5 shrink-0">
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900">
+              <button
+                type="button"
+                onClick={onOpenCustomLogo}
+                title={onOpenCustomLogo ? "Clique para mudar a foto ou logo do aplicativo" : "GASTOS.CASA"}
+                className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-sm border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900 group ${
+                  onOpenCustomLogo ? "cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" : ""
+                }`}
+              >
                 <img
-                  src="/app-icon.png"
+                  src={customLogo || "/app-icon.png"}
                   alt="GASTOS.CASA"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/app-icon.jpg";
                   }}
                 />
-              </div>
+              </button>
               <div className="leading-tight">
                 <div className="flex items-center gap-1.5">
                   <span className="text-base sm:text-lg font-extrabold tracking-tight">
@@ -352,16 +364,24 @@ export function Navbar({
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-200/20 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeSidebar();
+                    onOpenCustomLogo?.();
+                  }}
+                  className="relative w-10 h-10 rounded-xl overflow-hidden shadow-md border border-slate-200/80 dark:border-slate-800 shrink-0 bg-slate-900 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all text-left group"
+                  title="Toque para mudar a foto ou logo do aplicativo"
+                >
                   <img
-                    src="/app-icon.png"
+                    src={customLogo || "/app-icon.png"}
                     alt="GASTOS.CASA"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/app-icon.jpg";
                     }}
                   />
-                </div>
+                </button>
                 <div>
                   <h2 className="text-base font-extrabold tracking-tight">
                     GASTOS<span className="text-indigo-500">.CASA</span>
@@ -594,6 +614,28 @@ export function Navbar({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3">
                   Configurações & Ajuda
                 </span>
+
+                {/* Custom Logo / Photo Option */}
+                {onOpenCustomLogo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeSidebar();
+                      onOpenCustomLogo();
+                    }}
+                    className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                      isDark ? "text-slate-300 hover:bg-slate-800" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ImageIcon className="w-4 h-4 text-pink-500" />
+                      <span>Personalizar Imagem & Logo</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded-full">
+                      Mudar
+                    </span>
+                  </button>
+                )}
 
                 {/* Theme Mode Toggle */}
                 {onOpenCategories && (

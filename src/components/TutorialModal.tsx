@@ -144,19 +144,19 @@ export function TutorialModal({ isOpen, onClose, isDark = false }: TutorialModal
     },
     {
       id: "link",
-      title: "7. Acesso em Qualquer Lugar",
+      title: "7. Acesso e Instalar no Celular",
       icon: Smartphone,
       iconBg: "bg-emerald-500",
-      shortDesc: "Como salvar e abrir no celular via link",
+      shortDesc: "Como instalar no iPhone ou Android e compartilhar",
       details: {
-        heading: "Acesso Remoto sem Instalação",
+        heading: "Como Instalar o Aplicativo no seu Smartphone",
         points: [
-          "Seus dados ficam sincronizados e salvos no servidor da aplicação.",
-          "Clique em 'Acessar pelo Celular / Salvar Link' no topo ou no rodapé para ver o QR Code e o link direto.",
-          "Abra no navegador do seu smartphone (Chrome, Safari) e adicione à Tela Inicial como um aplicativo.",
-          "Você e sua família podem acessar o mesmo link em qualquer computador, tablet ou celular.",
+          "No iPhone: Abra no Safari, toque no botão de Compartilhar (o ícone com uma seta para cima ⬆️) e selecione 'Adicionar à Tela de Início'. O app vira um ícone e roda em tela cheia!",
+          "No Android: Abra no Google Chrome, toque nos 3 pontinhos (⋮) no canto superior direito e selecione 'Instalar aplicativo' ou 'Adicionar à tela inicial'.",
+          "Seus dados ficam sincronizados e salvos em tempo real no servidor para você e sua família.",
+          "Clique em 'Acessar pelo Celular / Salvar Link' no menu para ver o QR Code e o link direto de envio pelo WhatsApp.",
         ],
-        tip: "Dica: O modal de compartilhamento também permite gerar backup dos dados em arquivo JSON!",
+        tip: "Dica: O aplicativo funciona offline para consulta e atualiza automaticamente assim que conectar à internet!",
       },
     },
     {

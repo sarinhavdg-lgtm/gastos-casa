@@ -1,5 +1,21 @@
 import { useState, type ChangeEvent } from "react";
-import { Copy, Check, Smartphone, Globe, Download, Upload, X, ShieldCheck, Share2, FileText, RotateCcw } from "lucide-react";
+import {
+  Copy,
+  Check,
+  Smartphone,
+  Globe,
+  Download,
+  Upload,
+  X,
+  ShieldCheck,
+  Share2,
+  FileText,
+  RotateCcw,
+  Apple,
+  Share,
+  PlusSquare,
+  Sparkles,
+} from "lucide-react";
 import { FinanceData } from "../types";
 
 interface ShareLinkModalProps {
@@ -7,6 +23,7 @@ interface ShareLinkModalProps {
   onClose: () => void;
   data: FinanceData;
   onImportData: (data: FinanceData) => void;
+  onOpenCustomLogo?: () => void;
 }
 
 export function ShareLinkModal({
@@ -14,12 +31,14 @@ export function ShareLinkModal({
   onClose,
   data,
   onImportData,
+  onOpenCustomLogo,
 }: ShareLinkModalProps) {
   const [copied, setCopied] = useState(false);
   const [copiedBackup, setCopiedBackup] = useState(false);
   const [showPasteBox, setShowPasteBox] = useState(false);
   const [pasteText, setPasteText] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [installPlatform, setInstallPlatform] = useState<"iphone" | "android">("iphone");
 
   if (!isOpen) return null;
 
@@ -269,6 +288,169 @@ export function ShareLinkModal({
               Para os dois celulares compartilharem as mesmas contas e sincronizarem em tempo real, <strong>ambos devem acessar o mesmo link oficial acima</strong>. Envie pelo <strong>WhatsApp</strong> para o outro celular para abrirem juntos!
             </p>
           </div>
+
+          {/* GUIA DE INSTALAÇÃO NO CELULAR: IPHONE vs ANDROID */}
+          <div className="p-4 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-3 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-indigo-400" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">
+                  Como Instalar na Tela Inicial do Celular
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/20 px-2 py-0.5 rounded-full">
+                App sem ocupar memória
+              </span>
+            </div>
+
+            {/* Platform switch tabs */}
+            <div className="flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/60">
+              <button
+                type="button"
+                onClick={() => setInstallPlatform("iphone")}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  installPlatform === "iphone"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Apple className="w-3.5 h-3.5" />
+                <span>iPhone (Apple / Safari)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInstallPlatform("android")}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  installPlatform === "android"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Android (Google Chrome)</span>
+              </button>
+            </div>
+
+            {/* iPhone Steps */}
+            {installPlatform === "iphone" ? (
+              <div className="space-y-2.5 pt-1 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <strong className="text-white block">Abra o link no navegador Safari:</strong>
+                    <span className="text-slate-300">
+                      No iPhone, é necessário usar o <strong>Safari</strong> (não funciona pelo navegador interno do WhatsApp ou Instagram).
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div>
+                    <strong className="text-white flex items-center gap-1.5">
+                      Toque no botão Compartilhar <Share className="w-3.5 h-3.5 text-indigo-400" />:
+                    </strong>
+                    <span className="text-slate-300">
+                      Fica na barra inferior do Safari (o ícone do <strong>quadrado com uma seta para cima ⬆️</strong>).
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div>
+                    <strong className="text-white flex items-center gap-1.5">
+                      Selecione "Adicionar à Tela de Início" <PlusSquare className="w-3.5 h-3.5 text-indigo-400" />:
+                    </strong>
+                    <span className="text-slate-300">
+                      Role o menu um pouco para baixo e toque na opção com o ícone de <strong>[+]</strong>.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    4
+                  </span>
+                  <div>
+                    <strong className="text-emerald-300 block">Toque em "Adicionar" no topo direito:</strong>
+                    <span className="text-slate-300">
+                      Pronto! O ícone do GASTOS.CASA aparecerá na tela do seu iPhone abrindo em tela cheia igual a um aplicativo normal da App Store!
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Android Steps */
+              <div className="space-y-2.5 pt-1 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    1
+                  </span>
+                  <div>
+                    <strong className="text-white block">Abra o link no Google Chrome:</strong>
+                    <span className="text-slate-300">
+                      Abra o link compartilhado no navegador Chrome do seu Android.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    2
+                  </span>
+                  <div>
+                    <strong className="text-white block">Toque nos 3 pontinhos (⋮):</strong>
+                    <span className="text-slate-300">
+                      No canto superior direito da tela do Chrome.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 mt-0.5">
+                    3
+                  </span>
+                  <div>
+                    <strong className="text-emerald-300 block">Toque em "Instalar aplicativo" ou "Adicionar à tela inicial":</strong>
+                    <span className="text-slate-300">
+                      Confirme e o app será adicionado direto à grade de aplicativos do seu celular.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Botão para Personalizar Imagem da Casa */}
+          {onOpenCustomLogo && (
+            <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between gap-3">
+              <div>
+                <span className="font-bold text-xs text-purple-900 block">
+                  Foto ou Logo da Casa
+                </span>
+                <p className="text-[11px] text-purple-700">
+                  Deseja mudar a imagem de abertura ou ícone do app para uma foto da sua família ou casa?
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenCustomLogo();
+                }}
+                className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shrink-0 cursor-pointer shadow-xs"
+              >
+                Mudar Imagem
+              </button>
+            </div>
+          )}
 
           {/* Dica para liberar para outros celulares */}
           <div className="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-xl text-xs text-indigo-950 space-y-1">

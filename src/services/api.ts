@@ -11,6 +11,7 @@ function rehydrateEmptyServer(local: FinanceData, server: FinanceData): FinanceD
     cards: local.cards && local.cards.length > 0 ? local.cards : (server.cards || []),
     expenses: local.expenses && local.expenses.length > 0 ? local.expenses : (server.expenses || []),
     categories: local.categories && local.categories.length > 0 ? local.categories : server.categories,
+    customLogo: local.customLogo || server.customLogo,
     version: (server.version || 1) + 1,
     lastUpdated: new Date().toISOString(),
   };

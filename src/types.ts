@@ -85,6 +85,7 @@ export interface FinanceData {
   cards: CreditCard[];
   expenses: Expense[];
   categories?: CategoryItem[];
+  customLogo?: string;
   lastUpdated?: string;
   version?: number;
 }

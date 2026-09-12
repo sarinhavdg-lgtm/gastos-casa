@@ -18,6 +18,7 @@ import { TutorialModal } from "./components/TutorialModal";
 import { LoginScreen } from "./components/LoginScreen";
 import { PdfExportModal } from "./components/PdfExportModal";
 import { CategoryManagerModal } from "./components/CategoryManagerModal";
+import { CustomLogoModal } from "./components/CustomLogoModal";
 import {
   RotateCcw,
   ShieldCheck,
@@ -123,6 +124,7 @@ export default function App() {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [isCustomLogoOpen, setIsCustomLogoOpen] = useState(false);
 
   // Load initial data
   useEffect(() => {
@@ -334,6 +336,13 @@ export default function App() {
     setIsNFCeDetailsOpen(true);
   };
 
+  const handleSaveCustomLogo = (logoDataUrl?: string) => {
+    persistChanges({
+      ...data,
+      customLogo: logoDataUrl,
+    });
+  };
+
   // If user is not authenticated, display login screen
   if (!currentUser) {
     return (
@@ -341,6 +350,7 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         theme={theme}
         onToggleTheme={handleToggleTheme}
+        customLogo={data.customLogo}
       />
     );
   }
@@ -355,7 +365,7 @@ export default function App() {
           {/* App Brand Logo Image */}
           <div className="relative z-10 p-2 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl">
             <img
-              src="/app-icon.png"
+              src={data.customLogo || "/app-icon.png"}
               alt="GASTOS.CASA"
               className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-md transition-transform duration-700 animate-pulse"
               onError={(e) => {
@@ -390,6 +400,8 @@ export default function App() {
         }}
         onOpenCards={() => setIsCardsModalOpen(true)}
         onOpenCategories={() => setIsCategoryManagerOpen(true)}
+        onOpenCustomLogo={() => setIsCustomLogoOpen(true)}
+        customLogo={data.customLogo}
         onOpenShare={() => setIsShareModalOpen(true)}
         onOpenNFCe={() => setIsNFCeModalOpen(true)}
         onOpenTutorial={() => setIsTutorialOpen(true)}
@@ -665,6 +677,18 @@ export default function App() {
         onClose={() => setIsShareModalOpen(false)}
         data={data}
         onImportData={persistChanges}
+        onOpenCustomLogo={() => {
+          setIsShareModalOpen(false);
+          setIsCustomLogoOpen(true);
+        }}
+      />
+
+      <CustomLogoModal
+        isOpen={isCustomLogoOpen}
+        onClose={() => setIsCustomLogoOpen(false)}
+        currentLogo={data.customLogo}
+        onSaveLogo={handleSaveCustomLogo}
+        isDark={isDark}
       />
 
       <NFCeImportModal
