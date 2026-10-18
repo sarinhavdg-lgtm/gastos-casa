@@ -1,0 +1,762 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { FinanceData, Expense, CreditCard, ThemeMode, CategoryItem, ReportGroupingMode } from "./types";
+import { fetchFinanceData, saveFinanceData, resetFinanceData, checkServerStatus } from "./services/api";
+import { getAvailableReportMonths } from "./utils/invoiceUtils";
+import { DEFAULT_CATEGORIES } from "./utils/formatters";
+import { APP_VERSION } from "./constants";
+import { Navbar } from "./components/Navbar";
+import { BestDateBanner } from "./components/BestDateBanner";
+import { SummaryCards } from "./components/SummaryCards";
+import { InteractiveCharts } from "./components/InteractiveCharts";
+import { MonthlyComparison } from "./components/MonthlyComparison";
+import { ExpenseList } from "./components/ExpenseList";
+import { CardsSidebarPanel } from "./components/CardsSidebarPanel";
+import { ExpenseModal } from "./components/ExpenseModal";
+import { CreditCardManager } from "./components/CreditCardManager";
+import { ShareLinkModal } from "./components/ShareLinkModal";
+import { NFCeImportModal } from "./components/NFCeImportModal";
+import { NFCeDetailsModal } from "./components/NFCeDetailsModal";
+import { TutorialModal } from "./components/TutorialModal";
+import { LoginScreen } from "./components/LoginScreen";
+import { PdfExportModal } from "./components/PdfExportModal";
+import { CategoryManagerModal } from "./components/CategoryManagerModal";
+import { CustomLogoModal } from "./components/CustomLogoModal";
+import {
+  RotateCcw,
+  ShieldCheck,
+  Smartphone,
+  Layers,
+  BarChart3,
+  ListOrdered,
+  Receipt,
+  HelpCircle,
+  FileText,
+} from "lucide-react";
+
+export default function App() {
+  const [data, setData] = useState<FinanceData>(() => {
+    try {
+      const raw = localStorage.getItem("gastos_casa_data_v1") || localStorage.getItem("gastos_casa_backup_auto");
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return {
+      monthlyIncome: 0,
+      cards: [],
+      expenses: [],
+    };
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLiveSyncing, setIsLiveSyncing] = useState(false);
+  const [lastSyncedTime, setLastSyncedTime] = useState<Date | null>(new Date());
+
+  const isSavingRef = useRef(false);
+  const currentVersionRef = useRef(data.version || 1);
+  const lastUpdatedRef = useRef(data.lastUpdated || "");
+
+  useEffect(() => {
+    currentVersionRef.current = data.version || 1;
+    lastUpdatedRef.current = data.lastUpdated || "";
+  }, [data.version, data.lastUpdated]);
+
+  // Theme layout: 'light' or 'dark'
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem("gastos_casa_theme") || localStorage.getItem("financely_theme");
+    return saved === "dark" || saved === "light" ? saved : "light";
+  });
+
+  const [isDark, setIsDark] = useState(theme === "dark");
+
+  useEffect(() => {
+    setIsDark(theme === "dark");
+    localStorage.setItem("gastos_casa_theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
+  // User Authentication
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    try {
+      const storedLocal = localStorage.getItem("gastos_casa_auth_session");
+      if (storedLocal) {
+        const parsed = JSON.parse(storedLocal);
+        return parsed.user || "adm";
+      }
+      const storedSession = sessionStorage.getItem("gastos_casa_auth_session");
+      if (storedSession) {
+        const parsed = JSON.parse(storedSession);
+        return parsed.user || "adm";
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  const handleLoginSuccess = (username: string) => {
+    setCurrentUser(username);
+  };
+
+  const handleLogout = () => {
+    if (confirm("Deseja realmente sair do GASTOS.CASA?")) {
+      localStorage.removeItem("gastos_casa_auth_session");
+      sessionStorage.removeItem("gastos_casa_auth_session");
+      setCurrentUser(null);
+    }
+  };
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
+
+  // Current selected month: defaults to current YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  // Report grouping mode: 'invoice' (based on credit card closing day) or 'calendar' (01 to 31)
+  const [reportMode, setReportMode] = useState<ReportGroupingMode>(() => {
+    const saved = localStorage.getItem("gastos_casa_report_mode");
+    if (saved === "invoice" || saved === "calendar") return saved;
+    return "invoice";
+  });
+
+  const handleToggleReportMode = () => {
+    setReportMode((prev) => {
+      const next = prev === "invoice" ? "calendar" : "invoice";
+      localStorage.setItem("gastos_casa_report_mode", next);
+      return next;
+    });
+  };
+
+  // Card filter for expenses view
+  const [selectedCardFilter, setSelectedCardFilter] = useState<string>("all");
+
+  // Navigation tab for the main analysis section
+  const [activeSection, setActiveSection] = useState<"all" | "charts" | "compare" | "table">("all");
+
+  // Modals
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  const [isCardsModalOpen, setIsCardsModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isNFCeModalOpen, setIsNFCeModalOpen] = useState(false);
+  const [isNFCeDetailsOpen, setIsNFCeDetailsOpen] = useState(false);
+  const [viewingNFCeExpense, setViewingNFCeExpense] = useState<Expense | null>(null);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [isCustomLogoOpen, setIsCustomLogoOpen] = useState(false);
+
+  // Load initial data
+  useEffect(() => {
+    async function load() {
+      setIsLoading(true);
+      try {
+        const initial = await fetchFinanceData();
+        setData(initial);
+        setLastSyncedTime(new Date());
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  // Manual force sync across devices
+  const handleManualSync = useCallback(async () => {
+    if (isLiveSyncing) return;
+    setIsLiveSyncing(true);
+    try {
+      const latest = await fetchFinanceData();
+      setData(latest);
+      setLastSyncedTime(new Date());
+    } catch (err) {
+      console.warn("Manual sync error:", err);
+    } finally {
+      setIsLiveSyncing(false);
+    }
+  }, [isLiveSyncing]);
+
+  // Real-time automatic synchronization between phones/devices
+  useEffect(() => {
+    let isMounted = true;
+
+    const performSyncCheck = async () => {
+      // If currently saving or already live syncing, wait for next tick
+      if (isSavingRef.current) return;
+      try {
+        const status = await checkServerStatus();
+        if (!isMounted || !status) return;
+
+        const currentVer = currentVersionRef.current;
+        const currentUpdated = lastUpdatedRef.current;
+
+        // If the server has a newer version or newer updated timestamp, fetch immediately!
+        if (status.version > currentVer || (status.lastUpdated && status.lastUpdated !== currentUpdated)) {
+          setIsLiveSyncing(true);
+          const latest = await fetchFinanceData();
+          if (isMounted) {
+            setData(latest);
+            setLastSyncedTime(new Date());
+          }
+          setIsLiveSyncing(false);
+        }
+      } catch {
+        // Silently ignore transient network disconnects
+      }
+    };
+
+    // 1. Check server every 3.5 seconds
+    const intervalId = setInterval(performSyncCheck, 3500);
+
+    // 2. Immediately check when user unlocks phone or switches back to browser
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        performSyncCheck();
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+    };
+  }, []);
+
+  // Persist helper
+  const persistChanges = useCallback(async (updated: FinanceData) => {
+    setData(updated);
+    setIsSaving(true);
+    isSavingRef.current = true;
+    try {
+      await saveFinanceData(updated);
+      setLastSyncedTime(new Date());
+    } finally {
+      setIsSaving(false);
+      isSavingRef.current = false;
+    }
+  }, []);
+
+  // Available unique months (supporting card invoice cycles and calendar months)
+  const availableMonths = useMemo(() => {
+    return getAvailableReportMonths(data.expenses, data.cards, reportMode, selectedMonth);
+  }, [data.expenses, data.cards, reportMode, selectedMonth]);
+
+  // Handle Expenses
+  const handleSaveExpense = (expenseData: Omit<Expense, "id">, id?: string) => {
+    if (id) {
+      // Edit
+      const updatedExpenses = data.expenses.map((e) =>
+        e.id === id ? { ...expenseData, id } : e
+      );
+      persistChanges({ ...data, expenses: updatedExpenses });
+    } else {
+      // Add
+      const newExp: Expense = {
+        ...expenseData,
+        id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      };
+      persistChanges({ ...data, expenses: [newExp, ...data.expenses] });
+    }
+    setIsExpenseModalOpen(false);
+    setExpenseToEdit(null);
+  };
+
+  // Handle NFC-e imported expenses (batch)
+  const handleImportNFCeExpenses = (newExpenses: Omit<Expense, "id">[]) => {
+    const created: Expense[] = newExpenses.map((exp, idx) => ({
+      ...exp,
+      id: `exp-nfce-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+    }));
+
+    persistChanges({
+      ...data,
+      expenses: [...created, ...data.expenses],
+    });
+    setIsNFCeModalOpen(false);
+  };
+
+  const handleToggleExpenseStatus = (id: string) => {
+    const updatedExpenses = data.expenses.map((e) =>
+      e.id === id
+        ? { ...e, status: (e.status === "paid" ? "pending" : "paid") as "paid" | "pending" }
+        : e
+    );
+    persistChanges({ ...data, expenses: updatedExpenses });
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    const updatedExpenses = data.expenses.filter((e) => e.id !== id);
+    persistChanges({ ...data, expenses: updatedExpenses });
+  };
+
+  // Handle Cards
+  const handleSaveCard = (cardData: Omit<CreditCard, "id">, id?: string) => {
+    if (id) {
+      const updatedCards = data.cards.map((c) =>
+        c.id === id ? { ...cardData, id } : c
+      );
+      persistChanges({ ...data, cards: updatedCards });
+    } else {
+      const newCard: CreditCard = {
+        ...cardData,
+        id: `card-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      };
+      persistChanges({ ...data, cards: [...data.cards, newCard] });
+    }
+  };
+
+  const handleDeleteCard = (id: string) => {
+    const updatedCards = data.cards.filter((c) => c.id !== id);
+    const updatedExpenses = data.expenses.map((e) =>
+      e.cardId === id ? { ...e, cardId: undefined } : e
+    );
+    persistChanges({ ...data, cards: updatedCards, expenses: updatedExpenses });
+  };
+
+  // Handle Income
+  const handleUpdateIncome = (newIncome: number) => {
+    persistChanges({ ...data, monthlyIncome: newIncome });
+  };
+
+  // Handle Categories
+  const handleSaveCategories = (updatedCategories: CategoryItem[]) => {
+    persistChanges({ ...data, categories: updatedCategories });
+  };
+
+  // Reset data to empty
+  const handleResetData = async () => {
+    if (confirm("Deseja zerar todas as informações para começar do zero?")) {
+      setIsLoading(true);
+      try {
+        const clean = await resetFinanceData();
+        setData(clean);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleViewNFCe = (exp: Expense) => {
+    setViewingNFCeExpense(exp);
+    setIsNFCeDetailsOpen(true);
+  };
+
+  const handleSaveCustomLogo = (logoDataUrl?: string) => {
+    persistChanges({
+      ...data,
+      customLogo: logoDataUrl,
+    });
+  };
+
+  // If user is not authenticated, display login screen
+  if (!currentUser) {
+    return (
+      <LoginScreen
+        onLoginSuccess={handleLoginSuccess}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        customLogo={data.customLogo}
+      />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white select-none transition-opacity duration-300">
+        <div className="relative flex flex-col items-center justify-center">
+          {/* Ambient soft glow */}
+          <div className="absolute w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+
+          {/* App Brand Logo Image */}
+          <div className="relative z-10 p-2 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl">
+            <img
+              src={data.customLogo || `/app-icon.png?v=${data.version || 1}`}
+              alt="GASTOS.CASA"
+              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-md transition-transform duration-700 animate-pulse"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.src.includes("user-logo.png")) {
+                  target.src = "/user-logo.png";
+                }
+              }}
+            />
+          </div>
+
+          {/* Minimalist discreet pulse progress line */}
+          <div className="mt-8 w-24 h-1 bg-slate-850 rounded-full overflow-hidden">
+            <div className="w-full h-full bg-linear-to-r from-indigo-500 to-emerald-400 animate-pulse rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden flex flex-col font-sans antialiased transition-colors ${isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50/80 text-slate-900"}`}>
+      {/* Top Navbar with Theme Toggle, Tutorial and NFC-e buttons */}
+      <Navbar
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        availableMonths={availableMonths}
+        cardCount={data.cards.length}
+        reportMode={reportMode}
+        onToggleReportMode={handleToggleReportMode}
+        onOpenNewExpense={() => {
+          setExpenseToEdit(null);
+          setIsExpenseModalOpen(true);
+        }}
+        onOpenCards={() => setIsCardsModalOpen(true)}
+        onOpenCategories={() => setIsCategoryManagerOpen(true)}
+        onOpenCustomLogo={() => setIsCustomLogoOpen(true)}
+        customLogo={data.customLogo}
+        onOpenShare={() => setIsShareModalOpen(true)}
+        onOpenNFCe={() => setIsNFCeModalOpen(true)}
+        onOpenTutorial={() => setIsTutorialOpen(true)}
+        onOpenPdf={() => setIsPdfModalOpen(true)}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        isSaving={isSaving}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        activeSection={activeSection}
+        onSelectSection={setActiveSection}
+        isLiveSyncing={isLiveSyncing}
+        onManualSync={handleManualSync}
+        lastSyncedTime={lastSyncedTime}
+      />
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 sm:pb-8 space-y-5 sm:space-y-6 overflow-x-hidden">
+        {/* 1. CRITICAL HIGHLIGHT: BEST CREDIT CARD PURCHASE DATE */}
+        <BestDateBanner
+          cards={data.cards}
+          onOpenAddCard={() => setIsCardsModalOpen(true)}
+          isDark={isDark}
+        />
+
+        {/* 2. SUMMARY CARDS: High Density Metrics & Invoice Cycle Banner */}
+        <SummaryCards
+          expenses={data.expenses}
+          cards={data.cards}
+          monthlyIncome={data.monthlyIncome}
+          onUpdateIncome={handleUpdateIncome}
+          selectedMonth={selectedMonth}
+          reportMode={reportMode}
+          onToggleReportMode={handleToggleReportMode}
+          selectedCardId={selectedCardFilter}
+          isDark={isDark}
+        />
+
+        {/* Quick Tabs: View Mode Switcher */}
+        <div className="flex items-center justify-between gap-4 pt-1">
+          <div className={`flex p-1 rounded-xl text-xs font-semibold ${isDark ? "bg-slate-900 border border-slate-800" : "bg-slate-200/70 border border-slate-300/60"}`}>
+            <button
+              onClick={() => setActiveSection("all")}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                activeSection === "all"
+                  ? isDark
+                    ? "bg-indigo-600 text-white shadow-xs font-bold"
+                    : "bg-white text-slate-900 shadow-xs font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Visão Completa
+            </button>
+            <button
+              onClick={() => setActiveSection("charts")}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                activeSection === "charts"
+                  ? isDark
+                    ? "bg-indigo-600 text-white shadow-xs font-bold"
+                    : "bg-white text-slate-900 shadow-xs font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+              Gráficos
+            </button>
+            <button
+              onClick={() => setActiveSection("compare")}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                activeSection === "compare"
+                  ? isDark
+                    ? "bg-indigo-600 text-white shadow-xs font-bold"
+                    : "bg-white text-slate-900 shadow-xs font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              Comparativo
+            </button>
+            <button
+              onClick={() => setActiveSection("table")}
+              className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                activeSection === "table"
+                  ? isDark
+                    ? "bg-indigo-600 text-white shadow-xs font-bold"
+                    : "bg-white text-slate-900 shadow-xs font-bold"
+                  : isDark
+                  ? "text-slate-400 hover:text-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <ListOrdered className="w-3.5 h-3.5 text-indigo-400" />
+              Contas da Casa
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsTutorialOpen(true)}
+              className={`hidden md:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isDark
+                  ? "bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-300"
+                  : "bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-2xs"
+              }`}
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-indigo-400" />
+              Tutorial das Abas
+            </button>
+
+            <button
+              id="btn-quick-export-pdf"
+              onClick={() => setIsPdfModalOpen(true)}
+              className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isDark
+                  ? "bg-red-950/60 hover:bg-red-900 border-red-800 text-red-300"
+                  : "bg-red-50 hover:bg-red-100 border-red-200 text-red-700 shadow-2xs"
+              }`}
+              title="Gerar, Baixar e Compartilhar Todos os Gastos em PDF"
+            >
+              <FileText className="w-3.5 h-3.5 text-red-500" />
+              Relatório PDF
+            </button>
+
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className={`hidden sm:inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                isDark
+                  ? "bg-emerald-950/60 hover:bg-emerald-900 border-emerald-800 text-emerald-300"
+                  : "bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800"
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              Acessar por Link no Celular
+            </button>
+          </div>
+        </div>
+
+        {/* 3. HIGH DENSITY 12-COLUMN BENTO GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Main Area: Charts, Comparison and Table (8 cols on lg) */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Interactive Charts */}
+            {(activeSection === "all" || activeSection === "charts") && (
+              <InteractiveCharts
+                expenses={data.expenses}
+                cards={data.cards}
+                monthlyIncome={data.monthlyIncome}
+                selectedMonth={selectedMonth}
+                reportMode={reportMode}
+                categories={data.categories}
+                isDark={isDark}
+              />
+            )}
+
+            {/* Monthly Comparison */}
+            {(activeSection === "all" || activeSection === "compare") && (
+              <MonthlyComparison
+                expenses={data.expenses}
+                cards={data.cards}
+                currentMonth={selectedMonth}
+                availableMonths={availableMonths}
+                reportMode={reportMode}
+                isDark={isDark}
+              />
+            )}
+
+            {/* Expenses Table */}
+            {(activeSection === "all" || activeSection === "table") && (
+              <ExpenseList
+                expenses={data.expenses}
+                cards={data.cards}
+                selectedMonth={selectedMonth}
+                reportMode={reportMode}
+                onToggleReportMode={handleToggleReportMode}
+                selectedCardFilter={selectedCardFilter}
+                onSelectCardFilter={setSelectedCardFilter}
+                categories={data.categories}
+                onOpenCategoryManager={() => setIsCategoryManagerOpen(true)}
+                onToggleStatus={handleToggleExpenseStatus}
+                onEditExpense={(exp) => {
+                  setExpenseToEdit(exp);
+                  setIsExpenseModalOpen(true);
+                }}
+                onDeleteExpense={handleDeleteExpense}
+                onOpenNewExpense={() => {
+                  setExpenseToEdit(null);
+                  setIsExpenseModalOpen(true);
+                }}
+                onOpenNFCe={() => setIsNFCeModalOpen(true)}
+                onViewNFCe={handleViewNFCe}
+                onOpenPdfExport={() => setIsPdfModalOpen(true)}
+                isDark={isDark}
+              />
+            )}
+          </div>
+
+          {/* Right Sidebar: High Density Dark Slate Panel (4 cols on lg) */}
+          <div className="lg:col-span-4 space-y-6">
+            <CardsSidebarPanel
+              cards={data.cards}
+              expenses={data.expenses}
+              onOpenCards={() => setIsCardsModalOpen(true)}
+              onOpenNewExpense={() => {
+                setExpenseToEdit(null);
+                setIsExpenseModalOpen(true);
+              }}
+              onOpenShare={() => setIsShareModalOpen(true)}
+              onOpenNFCe={() => setIsNFCeModalOpen(true)}
+              onOpenTutorial={() => setIsTutorialOpen(true)}
+              onOpenPdf={() => setIsPdfModalOpen(true)}
+              onViewNFCe={handleViewNFCe}
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className={`pt-8 pb-4 border-t text-xs flex flex-col sm:flex-row items-center justify-between gap-4 ${isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-500"}`}>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-indigo-500" />
+            <span>
+              GASTOS.CASA <span className="font-bold text-indigo-400">{APP_VERSION}</span> • Gestão Residencial e Cartões de Crédito salvos e sincronizados via Link.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsTutorialOpen(true)}
+              className="hover:underline flex items-center gap-1 cursor-pointer font-medium text-indigo-400"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              Tutorial
+            </button>
+            <span>•</span>
+            <button
+              onClick={handleResetData}
+              className="text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer transition-colors text-xs font-semibold"
+              title="Zerar dados e recomeçar do zero"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Zerar Dados
+            </button>
+          </div>
+        </footer>
+      </main>
+
+      {/* MODALS */}
+      <ExpenseModal
+        isOpen={isExpenseModalOpen}
+        onClose={() => setIsExpenseModalOpen(false)}
+        onSave={handleSaveExpense}
+        cards={data.cards}
+        expenseToEdit={expenseToEdit}
+        categories={data.categories}
+        onSaveCategories={handleSaveCategories}
+        isDark={isDark}
+      />
+
+      <CategoryManagerModal
+        isOpen={isCategoryManagerOpen}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        categories={data.categories || DEFAULT_CATEGORIES}
+        onSaveCategories={handleSaveCategories}
+        isDark={isDark}
+      />
+
+      <CreditCardManager
+        cards={data.cards}
+        expenses={data.expenses}
+        onSaveCard={handleSaveCard}
+        onDeleteCard={handleDeleteCard}
+        isOpen={isCardsModalOpen}
+        onClose={() => setIsCardsModalOpen(false)}
+        isDark={isDark}
+      />
+
+      <ShareLinkModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        data={data}
+        onImportData={persistChanges}
+        onOpenCustomLogo={() => {
+          setIsShareModalOpen(false);
+          setIsCustomLogoOpen(true);
+        }}
+      />
+
+      <CustomLogoModal
+        isOpen={isCustomLogoOpen}
+        onClose={() => setIsCustomLogoOpen(false)}
+        currentLogo={data.customLogo}
+        onSaveLogo={handleSaveCustomLogo}
+        isDark={isDark}
+      />
+
+      <NFCeImportModal
+        isOpen={isNFCeModalOpen}
+        onClose={() => setIsNFCeModalOpen(false)}
+        cards={data.cards}
+        onSaveExpenses={handleImportNFCeExpenses}
+        isDark={isDark}
+      />
+
+      <NFCeDetailsModal
+        isOpen={isNFCeDetailsOpen}
+        onClose={() => {
+          setIsNFCeDetailsOpen(false);
+          setViewingNFCeExpense(null);
+        }}
+        expense={viewingNFCeExpense}
+        isDark={isDark}
+      />
+
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+        isDark={isDark}
+      />
+
+      <PdfExportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        expenses={data.expenses}
+        cards={data.cards}
+        selectedMonth={selectedMonth}
+        reportMode={reportMode}
+        categories={data.categories}
+        isDark={isDark}
+      />
+    </div>
+  );
+}
